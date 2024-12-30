@@ -1,0 +1,82 @@
+
+# Logs
+logs/
+*.log
+*.tlog
+
+# Visual Studio files
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build directories
+bin/
+obj/
+publish/
+out/
+
+# Generated files
+*.dll
+*.exe
+*.pdb
+*.mdb
+*.csproj.user
+*.dbmdl
+*.cache
+*.ilk
+*.log
+*.meta
+*.obj
+*.tmp
+*.vspscc
+*.vssscc
+.project
+.idea/
+
+# Dependency directories
+packages/
+node_modules/
+
+# Docker
+*.dockerfile
+docker-compose.override.yml
+
+# Secrets
+secrets.json
+.env
+
+# Generated SQL files
+*.mdf
+*.ldf
+*.ndf
+
+# Rider
+.idea/
+*.iml
+
+# MacOS
+.DS_Store
+
+# Linux
+*.swp
+*~
+.cache/
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# ReSharper
+_ReSharper*/
+*.DotSettings.user
+
+# JetBrains Rider
+.idea/
+
+.env
+secrets.json
+appsettings.Development.json
+
