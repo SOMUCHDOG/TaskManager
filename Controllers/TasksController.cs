@@ -1,4 +1,4 @@
-
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManager.Entities;
 using TaskManager.Services;
@@ -17,6 +17,7 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> GetAllTasks()
     {
         var tasks = await _taskService.GetAllTasksAsync();
