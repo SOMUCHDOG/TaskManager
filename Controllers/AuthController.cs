@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Org.Auth.Models;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
         if (login.Username == "admin" && login.Password == "password") // TODO replace with real validation
         {
             var token = GenerateJwtToken(login.Username);
-            _logger.LogInformation("Token generated successfully");
+            _logger.LogInformation("Login was successful");
             return Ok(new { token });
         }
 
@@ -33,23 +33,27 @@ public class AuthController : ControllerBase
 
     private string GenerateJwtToken(string username)
     {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "key"));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, username),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new Claim("sub", username),
+            new Claim("jti", Guid.NewGuid().ToString())
         };
 
-        var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddHours(1),
-            signingCredentials: credentials);
+        var handler = new JsonWebTokenHandler();
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Issuer = "TaskManager",
+            Audience = "TaskManagerUsers",
+            Claims = claims.ToDictionary(claim => (string)claim.Type, claim => (object)claim.Value),
+            Expires = DateTime.UtcNow.AddHours(1),
+            SigningCredentials = credentials
+        };
+
+        return handler.CreateToken(tokenDescriptor);
     }
 }
 

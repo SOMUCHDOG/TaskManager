@@ -4,6 +4,7 @@ using TaskManager.Repositories;
 using TaskManager.Data;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,27 @@ builder.Services.AddAuthentication("Bearer")
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>();
+                logger.LogError(context.Exception, "Authentication failed: {Message}", context.Exception.Message);
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>();
+                logger.LogInformation("Token validated successfully for user: {Username}", context.Principal.Identity.Name);
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>();
+                logger.LogWarning("Authentication challenge triggered. Headers: {Headers}", context.Request.Headers);
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -78,8 +100,8 @@ builder.Services.AddSwaggerGen(options =>
 // Configure Kestrel to listen on all network interfaces
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenLocalhost(5000);
-    //options.ListenAnyIP(80); // Bind to port 80
+    //options.ListenLocalhost(5000);
+    options.ListenAnyIP(80); // Bind to port 80
 });
 
 var app = builder.Build();
