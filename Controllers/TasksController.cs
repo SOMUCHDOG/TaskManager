@@ -5,22 +5,27 @@ using TaskManager.Services;
 
 namespace TaskManager.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class TasksController : ControllerBase
 {
     private readonly ITaskService _taskService;
+    private readonly ILogger<TasksController> _logger;
 
-    public TasksController(ITaskService taskService)
+    public TasksController(ITaskService taskService, ILogger<TasksController> logger)
     {
+        _logger = logger;
         _taskService = taskService;
     }
 
     [HttpGet]
-    [Authorize]
     public async Task<IActionResult> GetAllTasks()
     {
+        _logger.LogInformation("Fetching all tasks...");
         var tasks = await _taskService.GetAllTasksAsync();
+        _logger.LogInformation("Successfully fetched {Count} tasks", tasks.Count());
+
         return Ok(tasks);
     }
 

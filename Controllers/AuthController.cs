@@ -10,9 +10,11 @@ using System.Text;
 public class AuthController : ControllerBase
 {
     private readonly IConfiguration _config;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IConfiguration config)
+    public AuthController(IConfiguration config, ILogger<AuthController> logger)
     {
+        _logger = logger;
         _config = config;
     }
 
@@ -22,6 +24,7 @@ public class AuthController : ControllerBase
         if (login.Username == "admin" && login.Password == "password") // TODO replace with real validation
         {
             var token = GenerateJwtToken(login.Username);
+            _logger.LogInformation("Token generated successfully");
             return Ok(new { token });
         }
 
@@ -31,7 +34,7 @@ public class AuthController : ControllerBase
     private string GenerateJwtToken(string username)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
 
         var claims = new[]
         {
