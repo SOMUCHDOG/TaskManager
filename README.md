@@ -4,6 +4,9 @@
 ## Overview
 This document provides a detailed guide to set up and run the **Task Manager Application** using Docker containers. The application includes:
 
+- > [!NOTE]
+> I am working on configuting k8s to simplify this, but these are the current steps to reproduce.
+
 - A **.NET API** running in a Docker container.
 - A **SQL Server** instance running in another Docker container.
 - Communication between the API and database using Docker networking.
@@ -25,8 +28,13 @@ This document provides a detailed guide to set up and run the **Task Manager App
      ├── Startup.cs
      ├── ...
      ```
-
-3. **SQL Server Credentials**:
+3. **SQL Server Container**
+    ```bash
+    - docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=yourdatabasepassword' \
+    - -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2019-latest
+    ```
+    
+4. **SQL Server Credentials**:
    - Username: `sa`
    - Password: `YourSecurePassword`
 
@@ -34,31 +42,8 @@ This document provides a detailed guide to set up and run the **Task Manager App
 
 ## Step-by-Step Setup
 
-### 1. Create and Configure the Dockerfile
-Place the following `Dockerfile` in the root of the `TaskManager` directory:
 
-```dockerfile
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-EXPOSE 80
-
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY ["TaskManager.csproj", "./"]
-RUN dotnet restore
-COPY . .
-RUN dotnet build -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish -c Release -o /app/publish
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "TaskManager.dll"]
-```
-
-### 2. Build the Docker Image for the API
+### 1. Build the Docker Image for the API
 
 Run the following commands to build the Docker image for the API:
 
@@ -68,7 +53,7 @@ cd /path/to/TaskManager
 docker build -t taskmanager-api .
 ```
 
-### 3. Set Up the SQL Server Container
+### 2. Set Up the SQL Server Container
 
 Run a Docker container for SQL Server:
 
@@ -80,7 +65,7 @@ docker run --name sqlserver \
     -d mcr.microsoft.com/mssql/server:2019-latest
 ```
 
-### 4. Create a Custom Docker Network
+### 3. Create a Custom Docker Network
 
 To ensure communication between the API and SQL Server containers, create a custom Docker network:
 
@@ -88,7 +73,7 @@ To ensure communication between the API and SQL Server containers, create a cust
 docker network create app-network
 ```
 
-### 5. Connect Containers to the Network
+### 4. Connect Containers to the Network
 
 1. Connect the SQL Server container to the network:
    ```bash
@@ -96,23 +81,27 @@ docker network create app-network
    ```
 
 2. Run the API container and connect it to the same network:
+    - > [!NOTE]
+    > I haven't setup DNS to resolve sqlserver for my docker network yet.
+    > You can run "docker inspect network app-network" or "docker inspect sqlserver" to get the ip address instead. 
+
    ```bash
    docker run --name taskmanager-api \
-       -e "ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=TaskManagerDB;User=sa;Password=YourSecurePassword;" \
+       -e DefaultConnection="Server=sqlserver,1433;Database=TaskManagerDB;User=sa;Password=YourSecurePassword;" \
        --network app-network \
        -p 5001:80 \
        -d taskmanager-api
    ```
 
-### 6. Verify Connectivity
+### 5. Verify Connectivity
 
-#### 6.1 Test API Endpoints
+#### 5.1 Test API Endpoints
 Access the API in your browser or Postman:
 ```
 http://localhost:5000/api/tasks
 ```
 
-#### 6.2 Test Database Connectivity
+#### 5.2 Test Database Connectivity
 1. Open a shell inside the API container:
    ```bash
    docker exec -it taskmanager-api /bin/bash
@@ -123,6 +112,16 @@ http://localhost:5000/api/tasks
    ```
 
 3. Verify SQL Server is reachable on port 1433.
+
+### 6. Populate the database
+
+```
+docker ef update database
+```
+
+> [!NOTE]
+> Currently the migration doesn't populate the database with categories,
+> you will need to add some to the database through sqlcmd, sqlserver, or Azure Data Studio
 
 ### 7. Troubleshooting
 
@@ -160,12 +159,12 @@ http://localhost:5000/api/tasks
 ---
 
 ## Next Steps
-- Add proper HTTPS support for production.
-- Use `docker-compose` for simplified container orchestration.
+- Create Kubernetes yaml files for starting up the containers.
+- Update EF Core migrations to include default category values
+- Create Volumes and shell script to update the database outside of the standard build
+- Code the rest of the basic endpoints
 - Implement monitoring and logging for containerized services.
 
 ---
 
-## Contact
-For further assistance, contact the development team or refer to the Docker and .NET documentation.
 
