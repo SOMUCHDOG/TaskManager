@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taskmanager-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taskmanager-api
+  template:
+    metadata:
+      labels:
+        app: taskmanager-api
+    spec:
+      containers:
+      - name: taskmanager-api
+        image: taskmanager-api:latest
+        ports:
+        - containerPort: 80
