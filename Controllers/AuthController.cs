@@ -31,6 +31,7 @@ public class AuthController : ControllerBase
         return Unauthorized();
     }
 
+    // TODO Add SAML, Add Entra
     private string GenerateJwtToken(string username)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "key"));
